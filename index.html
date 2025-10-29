@@ -296,7 +296,7 @@
           <h2>Agenda un diagnóstico de reputación en menos de 48 horas</h2>
           <p>Cuéntanos qué necesitas y prepararemos un roadmap con quick wins, riesgos y prioridades para tu marca.</p>
         </div>
-        <form class="cta-form" action="#" method="post" onsubmit="return false;" aria-label="Formulario de contacto Opunnence">
+        <form id="contact-form" class="cta-form" action="#" method="post" aria-label="Formulario de contacto Opunnence">
           <label>
             <span>Nombre y apellido</span>
             <input type="text" name="name" placeholder="Ana Gómez" required />
@@ -314,6 +314,7 @@
             <textarea name="message" rows="4" placeholder="Cuéntanos contexto, retos o plazos clave"></textarea>
           </label>
           <button type="submit" class="btn btn-primary">Quiero mi diagnóstico</button>
+          <p class="form-status" role="status" aria-live="polite"></p>
           <p class="form-disclaimer">Al enviar aceptas recibir comunicaciones relevantes. No compartimos tus datos con terceros.</p>
         </form>
       </div>
@@ -357,17 +358,85 @@
     </div>
   </footer>
   <script>
-    // Integraci&oacute;n futura con api.opunnence.com
-    // window.addEventListener('DOMContentLoaded', () => {
-    //   fetch('https://api.opunnence.com/status')
-    //     .then((response) => response.json())
-    //     .then((status) => {
-    //       console.log('Estado de la API de Opunnence:', status);
-    //     })
-    //     .catch((error) => {
-    //       console.error('Error al conectar con api.opunnence.com', error);
-    //     });
-    // });
+    window.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('contact-form');
+      if (!form) return;
+
+      const statusNode = form.querySelector('.form-status');
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (statusNode) {
+        statusNode.style.display = 'none';
+      }
+
+      const setButtonState = (isSubmitting) => {
+        if (!submitButton) return;
+        if (isSubmitting) {
+          submitButton.dataset.originalText = submitButton.textContent;
+          submitButton.textContent = 'Enviando...';
+          submitButton.disabled = true;
+        } else {
+          submitButton.textContent = submitButton.dataset.originalText || 'Quiero mi diagnóstico';
+          submitButton.disabled = false;
+        }
+      };
+
+      const showStatus = (message, tone = 'info') => {
+        if (!statusNode) return;
+        statusNode.textContent = message;
+        statusNode.style.display = 'block';
+        statusNode.style.color = tone === 'success' ? '#0b7a3e' : tone === 'error' ? '#b00020' : '#333333';
+      };
+
+      const sanitize = (value) => (typeof value === 'string' ? value.trim() : '');
+      const getApiBaseUrl = () => {
+        const { origin } = window.location;
+        return origin.replace(/\/$/, '');
+      };
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+
+        const payload = {
+          name: sanitize(formData.get('name')),
+          email: sanitize(formData.get('email')),
+          role: sanitize(formData.get('role')) || null,
+          message: sanitize(formData.get('message')) || null,
+        };
+
+        if (!payload.name || !payload.email) {
+          showStatus('Por favor completa tu nombre y correo corporativo.', 'error');
+          return;
+        }
+
+        setButtonState(true);
+        showStatus('Enviando tu solicitud...', 'info');
+
+        try {
+          const response = await fetch(`${getApiBaseUrl()}/contact`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            const detail = errorBody?.detail || 'No ha sido posible enviar el formulario. Inténtalo de nuevo en unos minutos.';
+            throw new Error(Array.isArray(detail) ? detail.join(' ') : detail);
+          }
+
+          form.reset();
+          showStatus('¡Gracias! Hemos recibido tu solicitud y te contactaremos muy pronto.', 'success');
+        } catch (error) {
+          console.error('Error al enviar formulario de contacto', error);
+          showStatus(error.message || 'Error inesperado al enviar el formulario.', 'error');
+        } finally {
+          setButtonState(false);
+        }
+      });
+    });
   </script>
 </body>
 </html>
