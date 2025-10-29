@@ -296,7 +296,7 @@
           <h2>Agenda un diagnóstico de reputación en menos de 48 horas</h2>
           <p>Cuéntanos qué necesitas y prepararemos un roadmap con quick wins, riesgos y prioridades para tu marca.</p>
         </div>
-        <form id="contact-form" class="cta-form" action="#" method="post" aria-label="Formulario de contacto Opunnence">
+        <form id="contact-form" class="cta-form" action="#" method="post" aria-label="Formulario de contacto Opunnence" data-api-base="https://opunnence-api.onrender.com">
           <label>
             <span>Nombre y apellido</span>
             <input type="text" name="name" placeholder="Ana Gómez" required />
@@ -389,6 +389,10 @@
 
       const sanitize = (value) => (typeof value === 'string' ? value.trim() : '');
       const getApiBaseUrl = () => {
+        const configured = (form.dataset.apiBase || window.OPUNNENCE_API_BASE_URL || '').trim();
+        if (configured) {
+          return configured.replace(/\/$/, '');
+        }
         const { origin } = window.location;
         return origin.replace(/\/$/, '');
       };
