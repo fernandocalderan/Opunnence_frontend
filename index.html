@@ -416,20 +416,23 @@
 
       let lastScrollY = window.scrollY;
       let isTicking = false;
-      const mobileQuery = window.matchMedia('(max-width: 768px)');
+
+      const getHeaderConfig = () => {
+        const isCompact = window.innerWidth <= 768;
+        return {
+          threshold: isCompact ? 80 : 160,
+          delta: isCompact ? 12 : 24,
+        };
+      };
+
+      let { threshold, delta } = getHeaderConfig();
 
       const updateHeaderVisibility = () => {
         const currentScroll = window.scrollY;
 
-        if (!mobileQuery.matches) {
-          header.classList.remove('is-hidden');
-          lastScrollY = currentScroll;
-          return;
-        }
-
-        if (currentScroll > lastScrollY + 12 && currentScroll > 80) {
+        if (currentScroll > lastScrollY + delta && currentScroll > threshold) {
           header.classList.add('is-hidden');
-        } else if (currentScroll < lastScrollY - 12 || currentScroll <= 0) {
+        } else if (currentScroll < lastScrollY - delta || currentScroll <= 0) {
           header.classList.remove('is-hidden');
         }
 
@@ -447,12 +450,10 @@
       };
 
       window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', updateHeaderVisibility);
-      if (mobileQuery.addEventListener) {
-        mobileQuery.addEventListener('change', updateHeaderVisibility);
-      } else if (mobileQuery.addListener) {
-        mobileQuery.addListener(updateHeaderVisibility);
-      }
+      window.addEventListener('resize', () => {
+        ({ threshold, delta } = getHeaderConfig());
+        updateHeaderVisibility();
+      });
 
       updateHeaderVisibility();
     });
