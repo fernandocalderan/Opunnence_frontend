@@ -762,12 +762,26 @@ section {
   .header-inner {
     flex-wrap: wrap;
     justify-content: center;
+    padding: 0.75rem 0 1.1rem;
+    gap: 1rem;
+  }
+
+  .logo img {
+    height: 140px;
   }
 
   .nav ul {
     flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
+  }
+
+  .nav a {
+    font-size: 0.85rem;
+  }
+
+  .hero {
+    padding-top: 6rem;
   }
 
   .hero-copy h1 {
@@ -784,6 +798,18 @@ section {
 }
 
 @media (max-width: 520px) {
+  .header-inner {
+    padding: 0.6rem 0 0.9rem;
+  }
+
+  .logo img {
+    height: 110px;
+  }
+
+  .nav a {
+    font-size: 0.8rem;
+  }
+
   .btn {
     width: 100%;
     justify-content: center;
