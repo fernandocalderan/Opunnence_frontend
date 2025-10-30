@@ -329,86 +329,132 @@
   <script>
     window.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('contact-form');
-      if (!form) return;
 
-      const statusNode = form.querySelector('.form-status');
-      const submitButton = form.querySelector('button[type="submit"]');
-      if (statusNode) {
-        statusNode.style.display = 'none';
-      }
-
-      const setButtonState = (isSubmitting) => {
-        if (!submitButton) return;
-        if (isSubmitting) {
-          submitButton.dataset.originalText = submitButton.textContent;
-          submitButton.textContent = 'Enviando...';
-          submitButton.disabled = true;
-        } else {
-          submitButton.textContent = submitButton.dataset.originalText || 'Quiero mi diagnóstico';
-          submitButton.disabled = false;
+      if (form) {
+        const statusNode = form.querySelector('.form-status');
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (statusNode) {
+          statusNode.style.display = 'none';
         }
-      };
 
-      const showStatus = (message, tone = 'info') => {
-        if (!statusNode) return;
-        statusNode.textContent = message;
-        statusNode.style.display = 'block';
-        statusNode.style.color = tone === 'success' ? '#0b7a3e' : tone === 'error' ? '#b00020' : '#333333';
-      };
-
-      const sanitize = (value) => (typeof value === 'string' ? value.trim() : '');
-      const getApiBaseUrl = () => {
-        const configured = (form.dataset.apiBase || window.OPUNNENCE_API_BASE_URL || '').trim();
-        if (configured) {
-          return configured.replace(/\/$/, '');
-        }
-        const { origin } = window.location;
-        return origin.replace(/\/$/, '');
-      };
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(form);
-
-        const payload = {
-          name: sanitize(formData.get('name')),
-          email: sanitize(formData.get('email')),
-          role: sanitize(formData.get('role')) || null,
-          message: sanitize(formData.get('message')) || null,
+        const setButtonState = (isSubmitting) => {
+          if (!submitButton) return;
+          if (isSubmitting) {
+            submitButton.dataset.originalText = submitButton.textContent;
+            submitButton.textContent = 'Enviando...';
+            submitButton.disabled = true;
+          } else {
+            submitButton.textContent = submitButton.dataset.originalText || 'Quiero mi diagnóstico';
+            submitButton.disabled = false;
+          }
         };
 
-        if (!payload.name || !payload.email) {
-          showStatus('Por favor completa tu nombre y correo corporativo.', 'error');
+        const showStatus = (message, tone = 'info') => {
+          if (!statusNode) return;
+          statusNode.textContent = message;
+          statusNode.style.display = 'block';
+          statusNode.style.color = tone === 'success' ? '#0b7a3e' : tone === 'error' ? '#b00020' : '#333333';
+        };
+
+        const sanitize = (value) => (typeof value === 'string' ? value.trim() : '');
+        const getApiBaseUrl = () => {
+          const configured = (form.dataset.apiBase || window.OPUNNENCE_API_BASE_URL || '').trim();
+          if (configured) {
+            return configured.replace(/\/$/, '');
+          }
+          const { origin } = window.location;
+          return origin.replace(/\/$/, '');
+        };
+
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(form);
+
+          const payload = {
+            name: sanitize(formData.get('name')),
+            email: sanitize(formData.get('email')),
+            role: sanitize(formData.get('role')) || null,
+            message: sanitize(formData.get('message')) || null,
+          };
+
+          if (!payload.name || !payload.email) {
+            showStatus('Por favor completa tu nombre y correo corporativo.', 'error');
+            return;
+          }
+
+          setButtonState(true);
+          showStatus('Enviando tu solicitud...', 'info');
+
+          try {
+            const response = await fetch(`${getApiBaseUrl()}/contact`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              const errorBody = await response.json().catch(() => ({}));
+              const detail = errorBody?.detail || 'No ha sido posible enviar el formulario. Inténtalo de nuevo en unos minutos.';
+              throw new Error(Array.isArray(detail) ? detail.join(' ') : detail);
+            }
+
+            form.reset();
+            showStatus('¡Gracias! Hemos recibido tu solicitud y te contactaremos muy pronto.', 'success');
+          } catch (error) {
+            console.error('Error al enviar formulario de contacto', error);
+            showStatus(error.message || 'Error inesperado al enviar el formulario.', 'error');
+          } finally {
+            setButtonState(false);
+          }
+        });
+      }
+
+      const header = document.querySelector('.header');
+      if (!header) return;
+
+      let lastScrollY = window.scrollY;
+      let isTicking = false;
+      const mobileQuery = window.matchMedia('(max-width: 768px)');
+
+      const updateHeaderVisibility = () => {
+        const currentScroll = window.scrollY;
+
+        if (!mobileQuery.matches) {
+          header.classList.remove('is-hidden');
+          lastScrollY = currentScroll;
           return;
         }
 
-        setButtonState(true);
-        showStatus('Enviando tu solicitud...', 'info');
-
-        try {
-          const response = await fetch(`${getApiBaseUrl()}/contact`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          });
-
-          if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({}));
-            const detail = errorBody?.detail || 'No ha sido posible enviar el formulario. Inténtalo de nuevo en unos minutos.';
-            throw new Error(Array.isArray(detail) ? detail.join(' ') : detail);
-          }
-
-          form.reset();
-          showStatus('¡Gracias! Hemos recibido tu solicitud y te contactaremos muy pronto.', 'success');
-        } catch (error) {
-          console.error('Error al enviar formulario de contacto', error);
-          showStatus(error.message || 'Error inesperado al enviar el formulario.', 'error');
-        } finally {
-          setButtonState(false);
+        if (currentScroll > lastScrollY + 12 && currentScroll > 80) {
+          header.classList.add('is-hidden');
+        } else if (currentScroll < lastScrollY - 12 || currentScroll <= 0) {
+          header.classList.remove('is-hidden');
         }
-      });
+
+        lastScrollY = currentScroll;
+      };
+
+      const onScroll = () => {
+        if (!isTicking) {
+          window.requestAnimationFrame(() => {
+            updateHeaderVisibility();
+            isTicking = false;
+          });
+          isTicking = true;
+        }
+      };
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', updateHeaderVisibility);
+      if (mobileQuery.addEventListener) {
+        mobileQuery.addEventListener('change', updateHeaderVisibility);
+      } else if (mobileQuery.addListener) {
+        mobileQuery.addListener(updateHeaderVisibility);
+      }
+
+      updateHeaderVisibility();
     });
   </script>
 </body>

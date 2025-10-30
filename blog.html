@@ -235,5 +235,53 @@
       <p>© 2025 Opunnence. Todos los derechos reservados.</p>
     </div>
   </footer>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const header = document.querySelector('.header');
+      if (!header) return;
+
+      let lastScrollY = window.scrollY;
+      let isTicking = false;
+      const mobileQuery = window.matchMedia('(max-width: 768px)');
+
+      const updateHeaderVisibility = () => {
+        const currentScroll = window.scrollY;
+
+        if (!mobileQuery.matches) {
+          header.classList.remove('is-hidden');
+          lastScrollY = currentScroll;
+          return;
+        }
+
+        if (currentScroll > lastScrollY + 12 && currentScroll > 80) {
+          header.classList.add('is-hidden');
+        } else if (currentScroll < lastScrollY - 12 || currentScroll <= 0) {
+          header.classList.remove('is-hidden');
+        }
+
+        lastScrollY = currentScroll;
+      };
+
+      const onScroll = () => {
+        if (!isTicking) {
+          window.requestAnimationFrame(() => {
+            updateHeaderVisibility();
+            isTicking = false;
+          });
+          isTicking = true;
+        }
+      };
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', updateHeaderVisibility);
+      if (mobileQuery.addEventListener) {
+        mobileQuery.addEventListener('change', updateHeaderVisibility);
+      } else if (mobileQuery.addListener) {
+        mobileQuery.addListener(updateHeaderVisibility);
+      }
+
+      updateHeaderVisibility();
+    });
+  </script>
 </body>
 </html>

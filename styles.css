@@ -89,6 +89,8 @@ button {
   background: rgba(4, 17, 43, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(130, 184, 255, 0.12);
+  transition: transform 0.3s ease, background 0.3s ease;
+  will-change: transform;
 }
 
 .header-inner {
@@ -97,6 +99,10 @@ button {
   justify-content: space-between;
   gap: 1.5rem;
   padding: 1rem 0;
+}
+
+.header.is-hidden {
+  transform: translateY(-100%);
 }
 
 .logo img {
